@@ -111,6 +111,17 @@ def main() -> None:
     p.add_argument("--set", nargs="+", metavar="key=value", dest="fields")
     p.add_argument("--dry-run", action="store_true")
 
+    # normalize
+    p = sub.add_parser("normalize", help="Resize all pages to the same size")
+    p.add_argument("input")
+    p.add_argument("-o", "--output")
+    p.add_argument(
+        "--size",
+        default="a4",
+        help="Target page size: a4, a4-landscape, a3, a3-landscape, letter, legal, or WxH in PDF points (default: a4)",
+    )
+    p.add_argument("--dry-run", action="store_true")
+
     # info
     p = sub.add_parser("info", help="Detect PDF type and show info")
     p.add_argument("input")
@@ -210,6 +221,11 @@ def _dispatch(args: argparse.Namespace) -> None:
             write_metadata(
                 args.input, out, dry_run=args.dry_run, **parsed
             )
+
+    elif cmd == "normalize":
+        from utils.normalize import normalize
+        out = args.output or _default_output(args.input, "normalized")
+        normalize(args.input, out, size=args.size, dry_run=args.dry_run)
 
     elif cmd == "info":
         from utils.pdf_info import detect_pdf_type
