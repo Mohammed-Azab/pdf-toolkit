@@ -163,3 +163,39 @@ def test_rotate_warns_scanned(tmp_path, capsys):
     captured = capsys.readouterr()
     assert "Warning" in captured.out
     assert "scanned" in captured.out.lower() or "image" in captured.out.lower()
+
+
+# ---------------------------------------------------------------------------
+# split
+# ---------------------------------------------------------------------------
+
+from utils.split import split
+
+
+def test_split_pages_mode(text_pdf, tmp_path):
+    split(str(text_pdf), str(tmp_path), mode="pages")
+    files = sorted(tmp_path.glob("*.pdf"))
+    assert len(files) == 3
+    assert files[0].name == "text_page_001.pdf"
+    for f in files:
+        assert len(pypdf.PdfReader(str(f)).pages) == 1
+
+
+def test_split_range_mode(text_pdf, tmp_path):
+    split(str(text_pdf), str(tmp_path), mode="range", ranges="1-2,3")
+    files = sorted(tmp_path.glob("*.pdf"))
+    assert len(files) == 2
+    assert len(pypdf.PdfReader(str(files[0])).pages) == 2
+    assert len(pypdf.PdfReader(str(files[1])).pages) == 1
+
+
+def test_split_chunk_mode(text_pdf, tmp_path):
+    split(str(text_pdf), str(tmp_path), mode="size", chunk_size=2)
+    files = sorted(tmp_path.glob("*.pdf"))
+    assert len(files) == 2
+    assert len(pypdf.PdfReader(str(files[0])).pages) == 2
+
+
+def test_split_dry_run(text_pdf, tmp_path):
+    split(str(text_pdf), str(tmp_path), mode="pages", dry_run=True)
+    assert len(list(tmp_path.glob("*.pdf"))) == 0

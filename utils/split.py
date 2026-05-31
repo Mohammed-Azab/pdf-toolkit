@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+import math
+from pathlib import Path
+
+import pypdf
+from tqdm import tqdm
+
+from utils import atomic_write
+from utils.pdf_info import detect_pdf_type
+
+
+def split(
+    input_path: str | Path,
+    output_dir: str | Path,
+    mode: str = "pages",
+    ranges: str | None = None,
+    chunk_size: int | None = None,
+    dry_run: bool = False,
+) -> None:
+    input_path = str(input_path)
+    output_dir = Path(output_dir)
+    stem = Path(input_path).stem
+
+    info = detect_pdf_type(input_path)
+    if info.type == "encrypted":
+        raise RuntimeError(f"{input_path} is encrypted. Unlock it first.")
+
+    reader = pypdf.PdfReader(input_path)
+    total = len(reader.pages)
+
+    if mode == "pages":
+        groups = [[i] for i in range(total)]
+        names = [f"{stem}_page_{i + 1:03d}.pdf" for i in range(total)]
+    elif mode == "range":
+        if not ranges:
+            raise ValueError("--ranges is required for range mode.")
+        groups, names = _parse_ranges(ranges, total, stem)
+    elif mode == "size":
+        if not chunk_size or chunk_size < 1:
+            raise ValueError("--chunk-size must be a positive integer.")
+        n = math.ceil(total / chunk_size)
+        groups = [
+            list(range(i * chunk_size, min((i + 1) * chunk_size, total)))
+            for i in range(n)
+        ]
+        names = [f"{stem}_chunk_{i + 1:03d}.pdf" for i in range(n)]
+    else:
+        raise ValueError(f"Unknown mode '{mode}'. Use: pages, range, size.")
+
+    if dry_run:
+        for name, group in zip(names, groups):
+            print(f"[dry-run] Would write {output_dir / name} ({len(group)} page(s))")
+        return
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for name, group in tqdm(zip(names, groups), total=len(names), desc="Splitting", unit="file"):
+        writer = pypdf.PdfWriter()
+        for idx in group:
+            writer.add_page(reader.pages[idx])
+        out = str(output_dir / name)
+
+        def _write(tmp: str, w: pypdf.PdfWriter = writer) -> None:
+            with open(tmp, "wb") as f:
+                w.write(f)
+
+        atomic_write(out, _write)
+
+    print(f"Split into {len(groups)} file(s) in {output_dir}")
+
+
+def _parse_ranges(spec: str, total: int, stem: str) -> tuple[list[list[int]], list[str]]:
+    groups: list[list[int]] = []
+    names: list[str] = []
+    for i, part in enumerate(spec.split(",")):
+        part = part.strip()
+        if "-" in part:
+            a, b = part.split("-", 1)
+            group = list(range(int(a) - 1, int(b)))
+        else:
+            group = [int(part) - 1]
+        for idx in group:
+            if idx < 0 or idx >= total:
+                raise ValueError(
+                    f"Page {idx + 1} does not exist — this PDF has {total} pages."
+                )
+        groups.append(group)
+        names.append(f"{stem}_part_{i + 1:03d}.pdf")
+    return groups, names
