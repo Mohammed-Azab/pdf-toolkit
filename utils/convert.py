@@ -20,6 +20,18 @@ def img_to_pdf(
     dry_run: bool = False,
 ) -> None:
     output_path = str(output_path)
+
+    # If a single directory is given, collect all images from it (sorted)
+    if len(image_paths) == 1 and Path(image_paths[0]).is_dir():
+        folder = Path(image_paths[0])
+        image_paths = sorted(
+            f for f in folder.iterdir()
+            if f.is_file() and f.suffix.lower() in _IMG_EXTENSIONS
+        )
+        if not image_paths:
+            raise ValueError(f"No supported images found in '{folder}'.")
+        print(f"Found {len(image_paths)} image(s) in '{folder}'.")
+
     paths = [str(p) for p in image_paths]
 
     if not paths:

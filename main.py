@@ -112,14 +112,20 @@ def main() -> None:
     p.add_argument("--dry-run", action="store_true")
 
     # img2pdf
-    p = sub.add_parser("img2pdf", help="Convert image(s) to a PDF")
-    p.add_argument("inputs", nargs="+", metavar="image")
+    p = sub.add_parser("img2pdf", help="Convert image(s) or a folder of images to a PDF")
+    p.add_argument("inputs", nargs="+", metavar="image_or_folder")
     p.add_argument("-o", "--output", required=True)
     p.add_argument(
         "--size",
         default="fit",
         help="Page size: fit (use image dimensions), a4, a4-landscape, letter, or WxH in points (default: fit)",
     )
+    p.add_argument("--dry-run", action="store_true")
+
+    # repair
+    p = sub.add_parser("repair", help="Attempt to repair a corrupted PDF")
+    p.add_argument("input")
+    p.add_argument("-o", "--output")
     p.add_argument("--dry-run", action="store_true")
 
     # pdf2img
@@ -245,6 +251,11 @@ def _dispatch(args: argparse.Namespace) -> None:
     elif cmd == "img2pdf":
         from utils.convert import img_to_pdf
         img_to_pdf(args.inputs, args.output, size=args.size, dry_run=args.dry_run)
+
+    elif cmd == "repair":
+        from utils.repair import repair
+        out = args.output or _default_output(args.input, "repaired")
+        repair(args.input, out, dry_run=args.dry_run)
 
     elif cmd == "pdf2img":
         from utils.convert import pdf_to_img
