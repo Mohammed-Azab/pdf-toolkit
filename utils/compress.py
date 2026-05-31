@@ -82,7 +82,7 @@ def _compress_lossless(input_path: str, output_path: str) -> None:
             "qpdf", "--linearize",
             "--compress-streams=y",
             "--object-streams=generate",
-            mid, output_path,
+            _safe_path(mid), _safe_path(output_path),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
@@ -90,6 +90,15 @@ def _compress_lossless(input_path: str, output_path: str) -> None:
     finally:
         if os.path.exists(mid):
             os.remove(mid)
+
+
+def _safe_path(p: str) -> str:
+    """Prevent option injection: reject @-prefixed paths, prefix relative paths with ./"""
+    if p.startswith("@"):
+        raise ValueError(f"Unsafe path rejected: {p!r}")
+    if not (os.path.isabs(p) or p.startswith("./")):
+        return "./" + p
+    return p
 
 
 def _compress_ghostscript(input_path: str, output_path: str, quality: str) -> None:
@@ -106,13 +115,15 @@ def _compress_ghostscript(input_path: str, output_path: str, quality: str) -> No
         _compress_lossless(input_path, output_path)
         return
 
-    tmp = output_path + ".tmp"
+    out_dir = os.path.dirname(os.path.abspath(output_path)) or "."
+    with tempfile.NamedTemporaryFile(dir=out_dir, suffix=".pdf", delete=False) as tf:
+        tmp = tf.name
     try:
         cmd = [
             gs, "-sDEVICE=pdfwrite", "-dNOPAUSE", "-dBATCH", "-dSAFER",
             f"-dPDFSETTINGS={_QUALITY_MAP[quality]}",
             f"-sOutputFile={tmp}",
-            input_path,
+            _safe_path(input_path),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:

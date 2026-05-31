@@ -312,3 +312,104 @@ def test_compress_dry_run(text_pdf, tmp_path):
     out = str(tmp_path / "dry.pdf")
     compress(str(text_pdf), out, dry_run=True)
     assert not os.path.exists(out)
+
+
+# ---------------------------------------------------------------------------
+# watermark
+# ---------------------------------------------------------------------------
+
+from utils.watermark import watermark
+
+
+def test_watermark_text(text_pdf, tmp_path):
+    out = str(tmp_path / "watermarked.pdf")
+    watermark(str(text_pdf), out, text="CONFIDENTIAL")
+    assert len(pypdf.PdfReader(out).pages) == 3
+
+
+def test_watermark_invalid_opacity(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="opacity"):
+        watermark(str(text_pdf), str(tmp_path / "x.pdf"), text="X", opacity=1.5)
+
+
+def test_watermark_requires_text_or_image(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="text.*image|image.*text|neither"):
+        watermark(str(text_pdf), str(tmp_path / "x.pdf"))
+
+
+def test_watermark_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    watermark(str(text_pdf), out, text="DRAFT", dry_run=True)
+    assert not os.path.exists(out)
+
+
+# ---------------------------------------------------------------------------
+# extract
+# ---------------------------------------------------------------------------
+
+import glob as _glob
+
+from utils.extract import extract
+
+
+def test_extract_text(text_pdf, tmp_path):
+    out = str(tmp_path / "extracted.txt")
+    extract(str(text_pdf), out, type_="text")
+    assert os.path.exists(out)
+    assert "Hello, PDF toolkit!" in Path(out).read_text()
+
+
+def test_extract_pages_as_images(text_pdf, tmp_path):
+    pytest.importorskip("pdf2image")
+    out_dir = str(tmp_path / "pages")
+    extract(str(text_pdf), out_dir, type_="pages")
+    pngs = _glob.glob(os.path.join(out_dir, "*.png"))
+    assert len(pngs) == 3
+
+
+def test_extract_invalid_type(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="type"):
+        extract(str(text_pdf), str(tmp_path / "x"), type_="video")
+
+
+def test_extract_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "dry.txt")
+    extract(str(text_pdf), out, type_="text", dry_run=True)
+    assert not os.path.exists(out)
+
+
+# ---------------------------------------------------------------------------
+# crop
+# ---------------------------------------------------------------------------
+
+from utils.crop import crop, parse_box
+
+
+def test_parse_box_valid():
+    assert parse_box("50,50,500,700") == (50.0, 50.0, 500.0, 700.0)
+
+
+def test_parse_box_invalid():
+    with pytest.raises(ValueError, match="box"):
+        parse_box("50,50,500")  # only 3 values
+
+
+def test_crop_cli_mode(text_pdf, tmp_path):
+    out = str(tmp_path / "cropped.pdf")
+    crop(str(text_pdf), out, box="50,50,500,700", pages="all")
+    reader = pypdf.PdfReader(out)
+    assert len(reader.pages) == 3
+    cb = reader.pages[0].cropbox
+    assert float(cb.left) == 50.0
+    assert float(cb.bottom) == 50.0
+
+
+def test_crop_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    crop(str(text_pdf), out, box="50,50,500,700", dry_run=True)
+    assert not os.path.exists(out)
+
+
+def test_crop_requires_box_or_gui(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="box.*gui|gui.*box|--box|--gui"):
+        crop(str(text_pdf), str(tmp_path / "x.pdf"))
