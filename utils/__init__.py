@@ -11,13 +11,26 @@ def parse_pages(spec: str, total: int) -> list[int]:
     indices: list[int] = []
     for part in spec.split(","):
         part = part.strip()
+        if not part:
+            raise ValueError(f"Invalid page spec '{spec}': empty token.")
         if "-" in part:
-            start_s, end_s = part.split("-", 1)
-            for n in range(int(start_s), int(end_s) + 1):
+            halves = part.split("-", 1)
+            try:
+                start, end = int(halves[0]), int(halves[1])
+            except ValueError:
+                raise ValueError(f"Invalid page range '{part}' in spec '{spec}'.")
+            if end < start:
+                raise ValueError(
+                    f"Invalid page range '{part}': end page must be >= start page."
+                )
+            for n in range(start, end + 1):
                 _check_page(n, total)
                 indices.append(n - 1)
         else:
-            n = int(part)
+            try:
+                n = int(part)
+            except ValueError:
+                raise ValueError(f"Invalid page number '{part}' in spec '{spec}'.")
             _check_page(n, total)
             indices.append(n - 1)
     return sorted(set(indices))
