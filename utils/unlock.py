@@ -41,7 +41,7 @@ def unlock(
                 _write_decrypted(reader, output_path)
                 print(f"Decrypted → {output_path}")
                 return
-        except Exception:
+        except (pypdf.errors.PdfReadError, NotImplementedError):
             pass
 
     # Fallback: qpdf
