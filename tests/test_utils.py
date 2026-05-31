@@ -7,6 +7,7 @@ import pypdf
 import pytest
 
 from utils import atomic_write, parse_pages
+from utils.pdf_info import PDFInfo, detect_pdf_type
 
 
 # ---------------------------------------------------------------------------
@@ -68,9 +69,6 @@ def test_atomic_write_no_partial_on_error(tmp_path):
 # ---------------------------------------------------------------------------
 # pdf_info
 # ---------------------------------------------------------------------------
-
-from utils.pdf_info import PDFInfo, detect_pdf_type
-
 
 def test_pdf_info_text_pdf(text_pdf):
     info = detect_pdf_type(str(text_pdf))

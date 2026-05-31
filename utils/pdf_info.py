@@ -25,9 +25,13 @@ def detect_pdf_type(path: str | Path) -> PDFInfo:
     reader = pypdf.PdfReader(path)
 
     if reader.is_encrypted:
+        try:
+            _page_count = len(reader.pages)
+        except Exception:
+            _page_count = 0
         return PDFInfo(
             type="encrypted",
-            page_count=0,
+            page_count=_page_count,
             encryption_type=_encryption_type(reader),
             has_forms=False,
             text_page_count=0,
@@ -77,7 +81,10 @@ def _has_forms(reader: pypdf.PdfReader) -> bool:
 
 def _encryption_type(reader: pypdf.PdfReader) -> str:
     try:
-        enc = reader.trailer.get("/Encrypt", {})
+        enc_ref = reader.trailer.get("/Encrypt")
+        if enc_ref is None:
+            return "unknown"
+        enc = enc_ref.get_object() if hasattr(enc_ref, "get_object") else enc_ref
         v = enc.get("/V", 0)
         if v >= 5:
             return "AES-256"
