@@ -200,3 +200,31 @@ def test_split_chunk_mode(text_pdf, tmp_path):
 def test_split_dry_run(text_pdf, tmp_path):
     split(str(text_pdf), str(tmp_path), mode="pages", dry_run=True)
     assert len(list(tmp_path.glob("*.pdf"))) == 0
+
+
+# ---------------------------------------------------------------------------
+# merge
+# ---------------------------------------------------------------------------
+
+from utils.merge import merge
+
+
+def test_merge_two_pdfs(two_page_pdf, second_pdf, tmp_path):
+    out = str(tmp_path / "merged.pdf")
+    merge([str(two_page_pdf), str(second_pdf)], out)
+    assert len(pypdf.PdfReader(out).pages) == 4
+
+
+def test_merge_interleave(two_page_pdf, second_pdf, tmp_path):
+    out = str(tmp_path / "interleaved.pdf")
+    merge([str(two_page_pdf), str(second_pdf)], out, interleave=True)
+    assert len(pypdf.PdfReader(out).pages) == 4
+    with pdfplumber.open(out) as pdf:
+        assert "First PDF - Page 1" in (pdf.pages[0].extract_text() or "")
+        assert "Second PDF - Page A" in (pdf.pages[1].extract_text() or "")
+
+
+def test_merge_dry_run(two_page_pdf, second_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    merge([str(two_page_pdf), str(second_pdf)], out, dry_run=True)
+    assert not os.path.exists(out)
