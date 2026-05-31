@@ -228,3 +228,8 @@ def test_merge_dry_run(two_page_pdf, second_pdf, tmp_path):
     out = str(tmp_path / "dry.pdf")
     merge([str(two_page_pdf), str(second_pdf)], out, dry_run=True)
     assert not os.path.exists(out)
+
+
+def test_merge_encrypted_raises(encrypted_pdf, two_page_pdf, tmp_path):
+    with pytest.raises(RuntimeError, match="[Ee]ncrypt"):
+        merge([str(encrypted_pdf), str(two_page_pdf)], str(tmp_path / "x.pdf"))
