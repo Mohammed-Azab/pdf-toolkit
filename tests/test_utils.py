@@ -287,3 +287,28 @@ def test_unlock_dry_run(encrypted_pdf, tmp_path):
     out = str(tmp_path / "dry.pdf")
     unlock(str(encrypted_pdf), out, password="secret", dry_run=True)
     assert not os.path.exists(out)
+
+
+# ---------------------------------------------------------------------------
+# compress
+# ---------------------------------------------------------------------------
+
+from utils.compress import compress
+
+
+def test_compress_text_pdf(text_pdf, tmp_path):
+    out = str(tmp_path / "compressed.pdf")
+    compress(str(text_pdf), out)
+    assert os.path.exists(out)
+    assert len(pypdf.PdfReader(out).pages) == 3
+
+
+def test_compress_invalid_quality(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="quality"):
+        compress(str(text_pdf), str(tmp_path / "x.pdf"), quality="ultra")
+
+
+def test_compress_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    compress(str(text_pdf), out, dry_run=True)
+    assert not os.path.exists(out)
