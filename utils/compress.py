@@ -63,7 +63,7 @@ def _compress_lossless(input_path: str, output_path: str) -> None:
     reader = pypdf.PdfReader(input_path)
     writer = pypdf.PdfWriter()
     writer.append(reader)
-    writer.compress_identical_objects(remove_duplicates=True, remove_orphans=True)
+    writer.compress_identical_objects(remove_duplicates=True, remove_unreferenced=True)
 
     def _write_pypdf(tmp: str) -> None:
         with open(tmp, "wb") as f:
