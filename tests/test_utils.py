@@ -233,3 +233,31 @@ def test_merge_dry_run(two_page_pdf, second_pdf, tmp_path):
 def test_merge_encrypted_raises(encrypted_pdf, two_page_pdf, tmp_path):
     with pytest.raises(RuntimeError, match="[Ee]ncrypt"):
         merge([str(encrypted_pdf), str(two_page_pdf)], str(tmp_path / "x.pdf"))
+
+
+# ---------------------------------------------------------------------------
+# metadata
+# ---------------------------------------------------------------------------
+
+from utils.metadata import read_metadata, write_metadata
+
+
+def test_read_metadata(text_pdf):
+    meta = read_metadata(str(text_pdf))
+    assert isinstance(meta, dict)
+    # reportlab always sets /Producer
+    assert any("Producer" in k for k in meta)
+
+
+def test_write_metadata(text_pdf, tmp_path):
+    out = str(tmp_path / "meta.pdf")
+    write_metadata(str(text_pdf), out, title="Test Title", author="Test Author")
+    meta = read_metadata(out)
+    assert meta.get("/Title") == "Test Title"
+    assert meta.get("/Author") == "Test Author"
+
+
+def test_write_metadata_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "meta_dry.pdf")
+    write_metadata(str(text_pdf), out, title="Dry", dry_run=True)
+    assert not os.path.exists(out)
