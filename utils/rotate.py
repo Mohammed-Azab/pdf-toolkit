@@ -30,14 +30,19 @@ def rotate(
     info = detect_pdf_type(input_path)
     if info.type == "encrypted":
         raise RuntimeError(f"{input_path} is encrypted. Unlock it first.")
-    if info.type in ("scanned", "mixed"):
+    if info.type == "form":
+        print(
+            "Warning: PDF contains form fields. "
+            "Rotation may displace interactive field positions."
+        )
+    elif info.type in ("scanned", "mixed"):
         print(
             "Warning: PDF contains scanned/image pages. "
             "Rotation is visual-only — OCR orientation is not corrected."
         )
 
     reader = pypdf.PdfReader(input_path)
-    page_indices = parse_pages(pages, len(reader.pages))
+    page_indices = set(parse_pages(pages, len(reader.pages)))
 
     if dry_run:
         print(

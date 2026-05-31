@@ -122,3 +122,44 @@ def test_rotate_dry_run(text_pdf, tmp_path):
     out = str(tmp_path / "dry.pdf")
     rotate(str(text_pdf), out, angle=90, pages="all", dry_run=True)
     assert not os.path.exists(out)
+
+
+def test_rotate_minus90_normalised(text_pdf, tmp_path):
+    out = str(tmp_path / "rotated_270.pdf")
+    rotate(str(text_pdf), out, angle=-90, pages="1")
+    reader = pypdf.PdfReader(out)
+    assert reader.pages[0].get("/Rotate", 0) == 270
+
+
+def test_rotate_encrypted_raises(encrypted_pdf, tmp_path):
+    with pytest.raises(RuntimeError, match="[Ee]ncrypt"):
+        rotate(str(encrypted_pdf), str(tmp_path / "x.pdf"), angle=90)
+
+
+def test_rotate_warns_scanned(tmp_path, capsys):
+    # Build a minimal scanned-looking PDF (no extractable text, has image marker)
+    # We simulate this by patching detect_pdf_type to return scanned type
+    import unittest.mock as mock
+    from utils.pdf_info import PDFInfo
+    scanned_info = PDFInfo(
+        type="scanned", page_count=3, encryption_type=None,
+        has_forms=False, text_page_count=0, image_only_page_count=3
+    )
+    text_pdf_path = tmp_path / "fake_scanned.pdf"
+    # Copy the text fixture to a temp location and mock its type
+    import shutil as _shutil
+    # We need a real path — use tmp_path for output
+    out = str(tmp_path / "out.pdf")
+    # Find the text_pdf fixture file (we need any valid PDF path)
+    # We'll create one with reportlab
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.pagesizes import letter
+    c = rl_canvas.Canvas(str(text_pdf_path), pagesize=letter)
+    c.drawString(100, 700, "test")
+    c.showPage()
+    c.save()
+    with mock.patch("utils.rotate.detect_pdf_type", return_value=scanned_info):
+        rotate(str(text_pdf_path), out, angle=90)
+    captured = capsys.readouterr()
+    assert "Warning" in captured.out
+    assert "scanned" in captured.out.lower() or "image" in captured.out.lower()
