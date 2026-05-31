@@ -34,7 +34,7 @@ def write_metadata(
 
     existing = dict(reader.metadata or {})
     for key, value in fields.items():
-        normalized = f"/{key.capitalize()}" if not key.startswith("/") else key
+        normalized = f"/{key[0].upper() + key[1:]}" if not key.startswith("/") else key
         existing[normalized] = value
     writer.add_metadata(existing)
 
