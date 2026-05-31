@@ -194,6 +194,7 @@ def test_split_chunk_mode(text_pdf, tmp_path):
     files = sorted(tmp_path.glob("*.pdf"))
     assert len(files) == 2
     assert len(pypdf.PdfReader(str(files[0])).pages) == 2
+    assert len(pypdf.PdfReader(str(files[1])).pages) == 1
 
 
 def test_split_dry_run(text_pdf, tmp_path):

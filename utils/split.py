@@ -74,11 +74,25 @@ def _parse_ranges(spec: str, total: int, stem: str) -> tuple[list[list[int]], li
     names: list[str] = []
     for i, part in enumerate(spec.split(",")):
         part = part.strip()
+        if not part:
+            raise ValueError(f"Invalid ranges spec '{spec}': empty token.")
         if "-" in part:
-            a, b = part.split("-", 1)
-            group = list(range(int(a) - 1, int(b)))
+            halves = part.split("-", 1)
+            try:
+                a, b = int(halves[0].strip()), int(halves[1].strip())
+            except ValueError:
+                raise ValueError(f"Invalid page range '{part}' in ranges spec '{spec}'.")
+            if b < a:
+                raise ValueError(
+                    f"Invalid range '{part}': end page must be >= start page."
+                )
+            group = list(range(a - 1, b))
         else:
-            group = [int(part) - 1]
+            try:
+                n = int(part)
+            except ValueError:
+                raise ValueError(f"Invalid page number '{part}' in ranges spec '{spec}'.")
+            group = [n - 1]
         for idx in group:
             if idx < 0 or idx >= total:
                 raise ValueError(
