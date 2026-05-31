@@ -37,7 +37,7 @@ def split(
             raise ValueError("--ranges is required for range mode.")
         groups, names = _parse_ranges(ranges, total, stem)
     elif mode == "size":
-        if not chunk_size or chunk_size < 1:
+        if chunk_size is None or chunk_size < 1:
             raise ValueError("--chunk-size must be a positive integer.")
         n = math.ceil(total / chunk_size)
         groups = [
@@ -58,15 +58,16 @@ def split(
         writer = pypdf.PdfWriter()
         for idx in group:
             writer.add_page(reader.pages[idx])
-        out = str(output_dir / name)
-
-        def _write(tmp: str, w: pypdf.PdfWriter = writer) -> None:
-            with open(tmp, "wb") as f:
-                w.write(f)
-
-        atomic_write(out, _write)
+        atomic_write(str(output_dir / name), _make_writer_fn(writer))
 
     print(f"Split into {len(groups)} file(s) in {output_dir}")
+
+
+def _make_writer_fn(writer: pypdf.PdfWriter):
+    def _write(tmp: str) -> None:
+        with open(tmp, "wb") as f:
+            writer.write(f)
+    return _write
 
 
 def _parse_ranges(spec: str, total: int, stem: str) -> tuple[list[list[int]], list[str]]:
