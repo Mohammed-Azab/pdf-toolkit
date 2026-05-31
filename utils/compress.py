@@ -63,7 +63,7 @@ def _compress_lossless(input_path: str, output_path: str) -> None:
     reader = pypdf.PdfReader(input_path)
     writer = pypdf.PdfWriter()
     writer.append(reader)
-    writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+    writer.compress_identical_objects(remove_duplicates=True, remove_orphans=True)
 
     def _write_pypdf(tmp: str) -> None:
         with open(tmp, "wb") as f:
@@ -107,13 +107,18 @@ def _compress_ghostscript(input_path: str, output_path: str, quality: str) -> No
         return
 
     tmp = output_path + ".tmp"
-    cmd = [
-        gs, "-sDEVICE=pdfwrite", "-dNOPAUSE", "-dBATCH", "-dSAFER",
-        f"-dPDFSETTINGS={_QUALITY_MAP[quality]}",
-        f"-sOutputFile={tmp}",
-        input_path,
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"Ghostscript failed: {result.stderr.strip()}")
-    os.replace(tmp, output_path)
+    try:
+        cmd = [
+            gs, "-sDEVICE=pdfwrite", "-dNOPAUSE", "-dBATCH", "-dSAFER",
+            f"-dPDFSETTINGS={_QUALITY_MAP[quality]}",
+            f"-sOutputFile={tmp}",
+            input_path,
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Ghostscript failed: {result.stderr.strip()}")
+        os.replace(tmp, output_path)
+    except Exception:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
