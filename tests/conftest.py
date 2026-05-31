@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import pypdf
@@ -47,7 +46,7 @@ def encrypted_pdf(tmp_path_factory, text_pdf):
     writer = pypdf.PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
-    writer.encrypt("secret")
+    writer.encrypt("secret", algorithm="AES-256-R5")
     with open(out, "wb") as f:
         writer.write(f)
     return out
