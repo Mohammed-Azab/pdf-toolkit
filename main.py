@@ -111,6 +111,26 @@ def main() -> None:
     p.add_argument("--set", nargs="+", metavar="key=value", dest="fields")
     p.add_argument("--dry-run", action="store_true")
 
+    # img2pdf
+    p = sub.add_parser("img2pdf", help="Convert image(s) to a PDF")
+    p.add_argument("inputs", nargs="+", metavar="image")
+    p.add_argument("-o", "--output", required=True)
+    p.add_argument(
+        "--size",
+        default="fit",
+        help="Page size: fit (use image dimensions), a4, a4-landscape, letter, or WxH in points (default: fit)",
+    )
+    p.add_argument("--dry-run", action="store_true")
+
+    # pdf2img
+    p = sub.add_parser("pdf2img", help="Convert PDF pages to images")
+    p.add_argument("input")
+    p.add_argument("--output-dir", required=True)
+    p.add_argument("--format", dest="fmt", choices=["png", "jpg", "webp", "tiff"], default="png")
+    p.add_argument("--dpi", type=int, default=150)
+    p.add_argument("--pages", default="all")
+    p.add_argument("--dry-run", action="store_true")
+
     # normalize
     p = sub.add_parser("normalize", help="Resize all pages to the same size")
     p.add_argument("input")
@@ -221,6 +241,18 @@ def _dispatch(args: argparse.Namespace) -> None:
             write_metadata(
                 args.input, out, dry_run=args.dry_run, **parsed
             )
+
+    elif cmd == "img2pdf":
+        from utils.convert import img_to_pdf
+        img_to_pdf(args.inputs, args.output, size=args.size, dry_run=args.dry_run)
+
+    elif cmd == "pdf2img":
+        from utils.convert import pdf_to_img
+        pdf_to_img(
+            args.input, args.output_dir,
+            fmt=args.fmt, dpi=args.dpi,
+            pages=args.pages, dry_run=args.dry_run,
+        )
 
     elif cmd == "normalize":
         from utils.normalize import normalize
