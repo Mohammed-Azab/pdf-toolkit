@@ -88,3 +88,37 @@ def test_pdf_info_encrypted(encrypted_pdf):
 def test_pdf_info_page_count(two_page_pdf):
     info = detect_pdf_type(str(two_page_pdf))
     assert info.page_count == 2
+
+
+# ---------------------------------------------------------------------------
+# rotate
+# ---------------------------------------------------------------------------
+
+from utils.rotate import rotate
+
+
+def test_rotate_all_pages(text_pdf, tmp_path):
+    out = str(tmp_path / "rotated.pdf")
+    rotate(str(text_pdf), out, angle=90, pages="all")
+    reader = pypdf.PdfReader(out)
+    assert len(reader.pages) == 3
+    assert reader.pages[0].get("/Rotate", 0) == 90
+
+
+def test_rotate_specific_pages(text_pdf, tmp_path):
+    out = str(tmp_path / "rotated2.pdf")
+    rotate(str(text_pdf), out, angle=180, pages="2")
+    reader = pypdf.PdfReader(out)
+    assert reader.pages[1].get("/Rotate", 0) == 180
+    assert reader.pages[0].get("/Rotate", 0) == 0
+
+
+def test_rotate_invalid_angle(text_pdf, tmp_path):
+    with pytest.raises(ValueError, match="angle"):
+        rotate(str(text_pdf), str(tmp_path / "x.pdf"), angle=45, pages="all")
+
+
+def test_rotate_dry_run(text_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    rotate(str(text_pdf), out, angle=90, pages="all", dry_run=True)
+    assert not os.path.exists(out)
