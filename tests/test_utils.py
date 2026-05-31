@@ -63,3 +63,30 @@ def test_atomic_write_no_partial_on_error(tmp_path):
         atomic_write(str(out), bad_write)
 
     assert out.read_text() == "original"
+
+
+# ---------------------------------------------------------------------------
+# pdf_info
+# ---------------------------------------------------------------------------
+
+from utils.pdf_info import PDFInfo, detect_pdf_type
+
+
+def test_pdf_info_text_pdf(text_pdf):
+    info = detect_pdf_type(str(text_pdf))
+    assert isinstance(info, PDFInfo)
+    assert info.type == "text"
+    assert info.page_count == 3
+    assert info.has_forms is False
+    assert info.encryption_type is None
+
+
+def test_pdf_info_encrypted(encrypted_pdf):
+    info = detect_pdf_type(str(encrypted_pdf))
+    assert info.type == "encrypted"
+    assert info.encryption_type is not None
+
+
+def test_pdf_info_page_count(two_page_pdf):
+    info = detect_pdf_type(str(two_page_pdf))
+    assert info.page_count == 2
