@@ -261,3 +261,29 @@ def test_write_metadata_dry_run(text_pdf, tmp_path):
     out = str(tmp_path / "meta_dry.pdf")
     write_metadata(str(text_pdf), out, title="Dry", dry_run=True)
     assert not os.path.exists(out)
+
+
+# ---------------------------------------------------------------------------
+# unlock
+# ---------------------------------------------------------------------------
+
+from utils.unlock import unlock
+
+
+def test_unlock_with_password(encrypted_pdf, tmp_path):
+    out = str(tmp_path / "unlocked.pdf")
+    unlock(str(encrypted_pdf), out, password="secret")
+    reader = pypdf.PdfReader(out)
+    assert not reader.is_encrypted
+    assert len(reader.pages) == 3
+
+
+def test_unlock_wrong_password(encrypted_pdf, tmp_path):
+    with pytest.raises(RuntimeError, match="[Ff]ailed|[Ww]rong|[Ii]ncorrect|decrypt"):
+        unlock(str(encrypted_pdf), str(tmp_path / "fail.pdf"), password="wrong")
+
+
+def test_unlock_dry_run(encrypted_pdf, tmp_path):
+    out = str(tmp_path / "dry.pdf")
+    unlock(str(encrypted_pdf), out, password="secret", dry_run=True)
+    assert not os.path.exists(out)
