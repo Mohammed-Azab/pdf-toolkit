@@ -21,6 +21,9 @@ split file mode="pages" ranges="" output_dir="":
 merge output +files:
     {{python}} main.py merge {{files}} -o "{{output}}"
 
+merge-folder output folder:
+    {{python}} main.py merge "{{folder}}" -o "{{output}}"
+
 watermark file text:
     {{python}} main.py watermark "{{file}}" --text "{{text}}"
 

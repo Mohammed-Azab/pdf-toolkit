@@ -81,9 +81,9 @@ just split file.pdf [mode] [ranges] [output_dir]
 
 MERGE
 -----
-just merge output.pdf file1.pdf file2.pdf [file3.pdf ...]
+just merge output.pdf input1.pdf input2.pdf [input3.pdf ...]
 
-    Concatenates PDFs in order.
+    First arg is output. Remaining args are inputs, concatenated in order.
     Files with spaces in names: rename them first or use direct command:
         .venv/bin/python3 main.py merge "file one.pdf" "file two.pdf" -o out.pdf
 

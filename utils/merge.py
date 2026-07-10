@@ -16,7 +16,17 @@ def merge(
     dry_run: bool = False,
 ) -> None:
     output_path = str(output_path)
-    input_paths = [str(p) for p in input_paths]
+    expanded: list[str] = []
+    for p in input_paths:
+        p = Path(p)
+        if p.is_dir():
+            pdfs = sorted(p.glob("*.pdf"))
+            if not pdfs:
+                raise ValueError(f"No PDF files found in {p}")
+            expanded.extend(str(f) for f in pdfs)
+        else:
+            expanded.append(str(p))
+    input_paths = expanded
 
     for p in input_paths:
         if detect_pdf_type(p).type == "encrypted":
