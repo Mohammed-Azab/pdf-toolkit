@@ -1,0 +1,182 @@
+PDF TOOLKIT — USAGE
+===================
+
+Run any command via: just <recipe> [args]
+Run bare `just` to list all recipes.
+
+NOTE: filenames with spaces work for single-file recipes.
+      For merge/img2pdf, rename files to remove spaces first.
+
+
+INFO
+----
+just info file.pdf
+
+    Shows: type (text/image/mixed), page count, encryption, forms.
+
+
+COMPRESS
+--------
+just compress file.pdf [quality]
+
+    quality: screen | ebook | printer (default) | prepress
+    screen   = smallest file, lowest quality (72 dpi images)
+    ebook    = ~150 dpi
+    printer  = ~300 dpi
+    prepress = ~300 dpi + color preservation
+
+    Install ghostscript for real compression on image-heavy PDFs:
+        sudo apt install ghostscript qpdf
+
+
+CROP
+----
+just crop file.pdf "x1,y1,x2,y2" [pages]
+
+    Coordinates in PDF points (1 pt = 1/72 inch).
+    pages: all (default) | 1 | 1,3,5 | 2-6
+
+    Example: just crop file.pdf "50,50,550,750"
+
+
+ROTATE
+------
+just rotate file.pdf angle [pages]
+
+    angle: 90 | 180 | 270 | -90
+    pages: all (default) | 1 | 1,3,5 | 2-6
+
+    Example: just rotate file.pdf 90
+    Example: just rotate file.pdf 180 "1,3,5"
+
+
+UNLOCK
+------
+just unlock file.pdf [password]
+
+    Removes password protection.
+    No password arg = try empty password.
+
+    Example: just unlock locked.pdf
+    Example: just unlock locked.pdf mysecret
+
+
+SPLIT
+-----
+just split file.pdf [mode] [ranges] [output_dir]
+
+    mode: pages (default) | range | size
+
+    pages  — one file per page
+    range  — extract specific pages, requires ranges arg
+    size   — split by page count, requires chunk_size (use direct command)
+
+    Examples:
+        just split file.pdf
+        just split file.pdf range 5
+        just split file.pdf range 2-8
+        just split file.pdf range 1,3,7
+        just split file.pdf pages "" ./output
+
+
+MERGE
+-----
+just merge output.pdf file1.pdf file2.pdf [file3.pdf ...]
+
+    Concatenates PDFs in order.
+    Files with spaces in names: rename them first or use direct command:
+        .venv/bin/python3 main.py merge "file one.pdf" "file two.pdf" -o out.pdf
+
+    Example: just merge combined.pdf a.pdf b.pdf c.pdf
+
+
+WATERMARK
+---------
+just watermark file.pdf "text"
+just watermark-img file.pdf image.png
+
+    Text watermark stamped centered at 30% opacity in red by default.
+    For full control (opacity, color, position, size) use direct command:
+        .venv/bin/python3 main.py watermark file.pdf --text "DRAFT" \
+            --opacity 0.2 --color "#0000FF" --position top-right \
+            --font-size 36 --pages 1,2,3
+
+
+EXTRACT
+-------
+just extract file.pdf [type] [pages]
+
+    type:  text (default) | images | tables | pages
+    pages: all (default) | 1 | 1,3 | 2-5
+
+    Examples:
+        just extract file.pdf
+        just extract file.pdf images
+        just extract file.pdf text 1-3
+        just extract file.pdf pages 2-5
+
+
+METADATA
+--------
+just meta-read file.pdf
+just meta-set file.pdf key=value [key=value ...]
+
+    Read: prints all metadata fields.
+    Set:  overwrites specified fields, saves new file.
+
+    Common keys: title, author, subject, creator, producer
+
+    Example: just meta-set file.pdf title=Report author=Mohammed
+    Values with spaces: use direct command:
+        .venv/bin/python3 main.py metadata file.pdf --set "title=My Report" "author=John Doe"
+
+
+IMG2PDF
+-------
+just img2pdf output.pdf image1.png [image2.jpg ...]
+
+    Converts images to a PDF, one image per page.
+    Supported: png, jpg, webp, tiff, bmp
+    For folder input or size control use direct command:
+        .venv/bin/python3 main.py img2pdf ./photos/ -o out.pdf --size a4
+
+
+PDF2IMG
+-------
+just pdf2img file.pdf output_dir [format] [dpi]
+
+    format: png (default) | jpg | webp | tiff
+    dpi:    150 (default) — use 300 for print quality
+
+    Examples:
+        just pdf2img file.pdf ./frames
+        just pdf2img file.pdf ./frames jpg 300
+
+
+REPAIR
+------
+just repair file.pdf
+
+    Attempts to recover a corrupted PDF using pypdf.
+    Not guaranteed — works on minor structural issues.
+
+
+NORMALIZE
+---------
+just normalize file.pdf [size]
+
+    Resizes all pages to the same dimensions.
+    size: a4 (default) | a4-landscape | a3 | a3-landscape | letter | legal
+          or custom: WxH in PDF points
+
+    Examples:
+        just normalize file.pdf
+        just normalize file.pdf letter
+        just normalize file.pdf 612x792
+
+
+OUTPUT FILES
+------------
+All commands write to the same directory as the input file.
+Default output name: <stem>_<operation>.pdf
+Override with -o flag via direct command.
