@@ -9,11 +9,22 @@ compress file quality="printer":
 crop file box pages="all":
     {{python}} main.py crop "{{file}}" --box {{box}} --pages {{pages}}
 
+redact file corner="bottom-right" width_pct="15" height_pct="6" pages="all":
+    {{python}} main.py redact "{{file}}" --corner {{corner}} --width-pct {{width_pct}} --height-pct {{height_pct}} --pages {{pages}}
+
+redact-box file box pages="all":
+    {{python}} main.py redact "{{file}}" --box {{box}} --pages {{pages}}
+
 rotate file angle pages="all":
     {{python}} main.py rotate "{{file}}" --angle {{angle}} --pages {{pages}}
 
 unlock file password="":
     {{python}} main.py unlock "{{file}}" {{ if password != "" { "--password " + password } else { "" } }}
+
+unlock-folder folder password="":
+    for f in "{{folder}}"/*.pdf; do \
+        {{python}} main.py unlock "$f" -o "$f" {{ if password != "" { "--password " + password } else { "" } }}; \
+    done
 
 split file mode="pages" ranges="" output_dir="":
     {{python}} main.py split "{{file}}" --mode {{mode}} {{ if ranges != "" { "--ranges " + ranges } else { "" } }} {{ if output_dir != "" { "--output-dir " + output_dir } else { "" } }}
@@ -53,3 +64,4 @@ normalize file size="a4":
 
 info file:
     {{python}} main.py info "{{file}}"
+

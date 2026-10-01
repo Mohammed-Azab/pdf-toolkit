@@ -39,6 +39,18 @@ def main() -> None:
     p.add_argument("--gui", action="store_true")
     p.add_argument("--dry-run", action="store_true")
 
+    # redact
+    p = sub.add_parser("redact", help="Cover a region (e.g. a logo/stamp) with a solid color")
+    p.add_argument("input")
+    p.add_argument("-o", "--output")
+    p.add_argument("--box", help="x1,y1,x2,y2 in PDF points")
+    p.add_argument("--corner", choices=["top-left", "top-right", "bottom-left", "bottom-right"])
+    p.add_argument("--width-pct", type=float, help="Region width as %% of page width")
+    p.add_argument("--height-pct", type=float, help="Region height as %% of page height")
+    p.add_argument("--color", default="#FFFFFF")
+    p.add_argument("--pages", default="all")
+    p.add_argument("--dry-run", action="store_true")
+
     # rotate
     p = sub.add_parser("rotate", help="Rotate pages")
     p.add_argument("input")
@@ -175,6 +187,16 @@ def _dispatch(args: argparse.Namespace) -> None:
             args.input, out,
             box=args.box, pages=args.pages,
             gui=args.gui, dry_run=args.dry_run,
+        )
+
+    elif cmd == "redact":
+        from utils.redact import redact
+        out = args.output or _default_output(args.input, "redacted")
+        redact(
+            args.input, out,
+            box=args.box, corner=args.corner,
+            width_pct=args.width_pct, height_pct=args.height_pct,
+            color=args.color, pages=args.pages, dry_run=args.dry_run,
         )
 
     elif cmd == "rotate":
